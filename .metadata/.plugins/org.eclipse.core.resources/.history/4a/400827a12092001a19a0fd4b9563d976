@@ -1,0 +1,39 @@
+import java.awt.Color;
+import java.awt.Graphics;
+
+public class BasicEnemy extends GameObject{
+	
+	private Handler handler; 
+
+	public BasicEnemy(int x, int y, ID id, int WIDTH, int HEIGHT, Handler handler) {
+		super(x, y, id, WIDTH, HEIGHT);
+		
+		this.handler = handler;
+		velX = 5;
+		velY = 5;
+		
+	}
+
+	public void tick() {
+		if (this.rect.intersects(Game.player.rect)) {
+			HUD.HEALTH -= 1;
+			velY *= -1;
+			velX *= -1;
+		}
+		x += velX;
+		y += velY;
+		this.rect.x = x;
+		this.rect.y = y;
+		if(y <= 0 || y >= Game.HEIGHT-45) velY *= -1;
+		if(x <= 0 || x >= Game.WIDTH-20) velX *= -1;
+		handler.addObject(new Trail(x, y, ID.Trail, 16, 16, Color.getHSBColor(0, 100, 71), 0.01f, handler));
+		
+	}
+
+	public void render(Graphics g) {
+		g.setColor(Color.getHSBColor(0, 100, 71));
+		g.fillRect(x, y, WIDTH, HEIGHT);
+		
+	}
+	
+}

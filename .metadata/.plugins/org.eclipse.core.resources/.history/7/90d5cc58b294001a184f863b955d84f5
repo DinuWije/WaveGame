@@ -1,0 +1,70 @@
+import java.awt.Color;
+import java.awt.Graphics;
+import java.util.concurrent.ThreadLocalRandom;
+
+import com.wave.main.Game;
+import com.wave.main.GameObject;
+import com.wave.main.HUD;
+import com.wave.main.Handler;
+import com.wave.main.HealthPowerUp;
+import com.wave.main.ID;
+import com.wave.main.Spawn;
+
+public class BossEnemy extends GameObject{
+	
+	private Handler handler;
+	private int timer = 0;
+	private int timer2 = 0;
+	private HUD hud;
+
+	public BossEnemy(int x, int y, ID id, int WIDTH, int HEIGHT, Handler handler, HUD hud) {
+		super(x, y, id, WIDTH, HEIGHT);
+		
+		this.handler = handler;
+		this.hud = hud;
+		
+		velX = 3;
+		
+	}
+
+	public void tick() {
+		if (this.rect.intersects(Game.player.rect)) {
+			HUD.HEALTH -= 25;
+			AudioPlayer.getSound("menu_sound").play();
+		}
+		x += velX;
+		this.rect.x = x;
+		
+		timer++;
+		timer2++;
+		
+		//creating projectiles for the boss
+		if (timer >= 100) {
+			timer = 0;
+			int randNum = ThreadLocalRandom.current().nextInt(10, 23);
+			for (int i = 0; i < randNum; i++) {
+				handler.addObject(new BossProjectiles(this.x, this.y, ID.BossProjectiles, 5, 5, handler, hud));
+			}
+		}
+		
+		if (timer2 >= Spawn.getLevelLength()) {
+			killBoss();
+		}
+		
+		if(x <= 0 || x >= Game.WIDTH-75) velX *= -1;
+		
+	
+	}
+
+	public void render(Graphics g) {
+		g.setColor(Color.orange);
+		g.fillRect(x, y, WIDTH, HEIGHT);
+	}
+	
+	public void killBoss() {
+		handler.addObject(new HealthPowerUp(this.x, this.y, ID.HealthPowerUp, 12, 12, handler, 25));
+		handler.removeObject(this);
+	}
+
+
+}

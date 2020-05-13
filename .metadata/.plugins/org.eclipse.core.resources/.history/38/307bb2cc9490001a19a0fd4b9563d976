@@ -1,0 +1,46 @@
+import java.util.Random;
+
+public class Spawn {
+	
+	private Handler handler;
+	private HUD hud;
+	private int scoreKeep = 0;
+	private Random r = new Random();
+	
+	public Spawn(Handler handler, HUD hud) {
+		this.handler = handler;
+		this.hud = hud;
+	}
+	
+	public void tick() {
+		scoreKeep++;
+		if(scoreKeep >= 10) {
+			scoreKeep = 0;
+			hud.setLevel((hud.getLevel())+1);
+
+			if((hud.getLevel() % 5) == 0) {
+				handler.addObject(new FastEnemy(r.nextInt(Game.WIDTH-50), r.nextInt(Game.HEIGHT-50), ID.FastEnemy, 10, 10, handler));
+			}
+			else if (r.nextInt(2) == 1) {
+				handler.addObject(new BasicEnemy(r.nextInt(Game.WIDTH-50), r.nextInt(Game.HEIGHT-50), ID.BasicEnemy, 16, 16, handler));
+			}
+			
+			if (hud.getLevel() % 10 == 0) {
+				handler.addObject(new TrackerEnemy(r.nextInt(Game.WIDTH-50), r.nextInt(Game.HEIGHT-50), ID.TrackerEnemy, 20, 20, handler));
+			}
+			if(((hud.getLevel() % 3) == 0) && (r.nextInt(2) == 1)) {
+				handler.addObject(new HealthPowerUp(r.nextInt(Game.WIDTH-50), r.nextInt(Game.HEIGHT-50), ID.HealthPowerUp, 10, 10, handler));
+			}
+			
+			if((hud.getLevel() % 20 == 0)) {
+				for (int i = 0; i < handler.object.size(); i++) {
+					GameObject tempObject2 = handler.object.get(i);
+					handler.removeObject(tempObject2);
+				}
+			}
+			
+		}
+	}
+	
+
+}

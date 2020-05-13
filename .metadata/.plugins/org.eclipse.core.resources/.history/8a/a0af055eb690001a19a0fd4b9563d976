@@ -1,0 +1,58 @@
+import java.awt.Color;
+import java.awt.Graphics;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
+public class BossEnemy extends GameObject{
+	
+	private Handler handler;
+	private int timer = 0;
+	private int timer2 = 0;
+
+	public BossEnemy(int x, int y, ID id, int WIDTH, int HEIGHT, Handler handler) {
+		super(x, y, id, WIDTH, HEIGHT);
+		
+		this.handler = handler;
+		velX = 3;
+		
+	}
+
+	public void tick() {
+		if (this.rect.intersects(Game.player.rect)) {
+			HUD.HEALTH -= 25;
+		}
+		x += velX;
+		this.rect.x = x;
+		
+		timer++;
+		timer2++;
+		
+		if (timer >= 100) {
+			timer = 0;
+			int randNum = ThreadLocalRandom.current().nextInt(8, 21);
+			for (int i = 0; i < randNum; i++) {
+				handler.addObject(new BossProjectiles(this.x, this.y, ID.BossProjectiles, 16, 16, handler));
+			}
+		}
+		
+		if (timer2 >= Spawn.getLevelLength()) {
+			killThis();
+		}
+		
+		if(x <= 0 || x >= Game.WIDTH-75) velX *= -1;
+		
+	
+	}
+
+	public void render(Graphics g) {
+		g.setColor(Color.orange);
+		g.fillRect(x, y, WIDTH, HEIGHT);
+		
+	}
+	
+	public void killThis() {
+		handler.removeObject(this);
+	}
+
+
+}

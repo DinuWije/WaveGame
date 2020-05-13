@@ -1,0 +1,45 @@
+import java.awt.Color;
+import java.awt.Graphics;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
+public class MenuBot extends GameObject{
+	
+	private Handler handler; 
+	private Random r = new Random();
+	private int randInt1 = r.nextInt(255);
+	private int randInt2 = r.nextInt(255);
+	private int randInt3 = r.nextInt(255);
+	private Color mobColor = new Color(randInt1, randInt2, randInt3);
+
+	public MenuBot(int x, int y, ID id, int WIDTH, int HEIGHT, Handler handler) {
+		super(x, y, id, WIDTH, HEIGHT);
+		this.handler = handler;
+		
+		velX = ThreadLocalRandom.current().nextInt(2, 11);
+		velY = ThreadLocalRandom.current().nextInt(2, 11);
+		
+	}
+	
+
+	public void tick() {
+		x += velX;
+		y += velY;
+		this.rect.x = x;
+		this.rect.y = y;
+		
+		if(y <= 0 || y >= Game.HEIGHT-45) velY *= -1;
+		if(x <= 0 || x >= Game.WIDTH-20) velX *= -1;
+		int size = ThreadLocalRandom.current().nextInt(10, 20);
+		handler.addObject(new Trail(x, y, ID.Trail, size, size, mobColor, 0.01f, handler));
+		
+	}
+
+	public void render(Graphics g) {
+		
+		g.setColor(mobColor);
+		g.fillRect(x, y, WIDTH, HEIGHT);
+		
+	}
+	
+}

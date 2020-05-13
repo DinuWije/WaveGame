@@ -1,0 +1,11 @@
+
+public enum ID {
+	
+	Player(),
+	BasicEnemy(),
+	Trail(),
+	FastEnemy(),
+	TrackerEnemy(),
+	HealthPowerUp();
+
+}

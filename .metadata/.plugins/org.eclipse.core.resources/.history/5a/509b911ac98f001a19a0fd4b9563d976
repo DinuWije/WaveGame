@@ -1,0 +1,32 @@
+import java.awt.Color;
+import java.awt.Graphics;
+
+public class Player extends GameObject{
+	
+	Handler handler;
+	
+	public Player(int x, int y, ID id, int WIDTH, int HEIGHT, Handler handler) {
+		super(x, y, id, WIDTH, HEIGHT);
+		this.handler = handler;
+	
+	}
+
+	public void tick() {
+		x += velX;
+		y += velY;
+		this.rect.x = x;
+		this.rect.y = y;
+	
+		x = Game.clamp(x, 0, Game.WIDTH-38);
+		y = Game.clamp(y, 0, Game.HEIGHT-60);
+		handler.addObject(new Trail(x, y, ID.Trail, 32, 32, Color.white, 0.01f, handler));
+	}
+	
+	public void render(Graphics g) {
+		g.setColor(Color.white);
+		g.fillRect(x, y, WIDTH , HEIGHT);
+	}
+	
+	
+
+}

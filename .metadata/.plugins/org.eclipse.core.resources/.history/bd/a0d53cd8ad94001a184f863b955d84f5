@@ -1,0 +1,245 @@
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.image.BufferStrategy;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.InputStreamReader;
+import java.util.Random;
+
+public class Game extends Canvas implements Runnable{
+
+	/**
+	 * 
+	 */
+	
+	
+	private static final long serialVersionUID = -1442798787354930462L;
+	
+	public static final int WIDTH = 640, HEIGHT = WIDTH / 12 * 9;
+	
+	private Thread thread;
+	private boolean running = false;
+	
+	private Random r;
+	private Handler handler;
+	private int highScore;
+	
+	public HUD hud;
+	public static Player player;
+	public Spawn spawner;
+	public Menu menu;
+	
+	//saving high score data
+	private String saveDataPath;
+	private String fileName = "SaveData";
+	
+	//various possible game states
+	public enum STATE {
+		Menu,
+		Game,
+		Help,
+		Pause,
+		GameOver
+	};
+	
+	public static STATE gameState = STATE.Menu;
+	
+	public Game() {
+		
+		//finding high score save spot
+		try {
+			saveDataPath = Game.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+		loadHighScore();
+		
+		//adding key objects to game
+		r = new Random();
+		handler = new Handler();
+		this.addKeyListener(new KeyInput(handler));
+		menu = new Menu(this, handler);
+		this.addMouseListener(menu);
+		
+		//playing music
+		AudioPlayer.load();
+		AudioPlayer.getMusic("music").loop();
+		
+		//creating visual aspects of game
+		new Window(WIDTH, HEIGHT, "Wave 1.0", this);
+		hud = new HUD(this);
+		spawner = new Spawn(handler, hud);
+		
+	}
+	
+	//saving and extracting data from a file for the high score
+	private void createSaveData() {
+		try {
+			File file = new File(saveDataPath, fileName);
+			
+			FileWriter output = new FileWriter(file);
+			BufferedWriter writer  = new BufferedWriter(output);
+			writer.write("" + 0);
+			writer.close();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void loadHighScore() {
+		try {
+			File f = new File(saveDataPath, fileName);
+			if(!f.isFile()) {
+				createSaveData();
+			}
+			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+			highScore = Integer.parseInt(reader.readLine());
+			reader.close();
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void setHighScore() {
+		FileWriter output = null;
+		
+		try {
+			File f = new File(saveDataPath, fileName);
+			output = new FileWriter(f);
+			BufferedWriter writer = new BufferedWriter(output);
+			writer.write("" + highScore);
+			
+			writer.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public int getHighScore() {
+		return highScore;
+	}
+	
+	//method to start the game from main menu
+	public static void startGame(Handler handler) {
+		Random r = new Random();
+		gameState = STATE.Game;
+		player = new Player(Game.WIDTH/2-32, Game.HEIGHT/2-32, ID.Player, 32, 32);
+		handler.addObject(player);
+		handler.addObject(new BasicEnemy(r.nextInt(Game.WIDTH-50), r.nextInt(Game.HEIGHT-50), ID.BasicEnemy, 16, 16, handler));
+	}
+	
+	//starts/stops thread
+	public synchronized void start() {
+		thread = new Thread(this);
+		thread.start();
+		running = true;
+	}
+	
+	public synchronized void stop() {
+		try{
+			thread.join();
+			running = false;
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	//some code to make the ticking and rendering work properly
+	public void run() {
+		this.requestFocus();
+		long lastTime = System.nanoTime();
+		double amountOfTicks = 60.0;
+		double ns = 1000000000/ amountOfTicks;
+		double delta = 0;
+		long timer = System.currentTimeMillis();
+		int frames = 0;
+		while(running) {
+			long now = System.nanoTime();
+			delta += (now - lastTime) / ns;
+			lastTime = now;
+			while(delta >= 1) {
+				tick();
+				delta--;
+			}
+			if(running)
+				render();
+			frames++;
+			
+			if(System.currentTimeMillis() - timer > 1000) {
+				timer += 1000;
+				//System.out.println("FPS: " + frames);
+				frames = 0;
+			}
+		}
+		stop();
+	}
+	
+	//ticks the game, runs constantly
+	private void tick() {
+		handler.tick();
+		if(gameState == STATE.Game) {
+			hud.tick();
+			spawner.tick();
+			if (hud.getScore() > highScore) {
+				highScore = hud.getScore();
+				setHighScore();
+			}
+		}else if (gameState == STATE.Menu || gameState == STATE.Help || gameState == STATE.GameOver){
+			menu.tick();
+		}
+		
+	}
+	
+	//sets up visuals of the game
+	private void render() {
+		BufferStrategy bs = this.getBufferStrategy();
+		if(bs == null) {
+			this.createBufferStrategy(3);
+			return;
+		}
+		
+		Graphics g = bs.getDrawGraphics();
+		
+		g.setColor(Color.black);
+		g.fillRect(0, 0, WIDTH, HEIGHT);
+		
+		handler.render(g);
+		
+		//different visuals for different game states
+		if(gameState == STATE.Game) {
+			hud.render(g);
+		} else if (gameState == STATE.Menu || gameState == STATE.Help || gameState == STATE.GameOver || gameState == STATE.Pause){
+			menu.render(g);
+			
+		}
+		bs.show();
+		g.dispose();
+		
+		
+	}
+	
+	//clamps certain values in place 9doesn't let them go above or below
+	public static int clamp(int var, int min, int max) {
+		if(var >= max)
+			return var = max;
+		else if(var <= min)
+			return var = min;
+		else
+			return var;
+	}
+	
+	
+	public static void main(String[] args) {
+		new Game();
+
+	}
+	
+
+}
